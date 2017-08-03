@@ -80,7 +80,8 @@ function init () {
   const SKY_COLOR = 0x7EC0EE
   hemiLight.position.set(0.095, 1, 0.75);
   scene.add(hemiLight);
-  scene.fog = new THREE.Fog(SKY_COLOR, 0, 1000);
+  scene.fog = new THREE.Fog(SKY_COLOR, HEIGHTMAP.CHUNK_SIZE*0.8, HEIGHTMAP.CHUNK_SIZE);
+  //scene.fog = new THREE.FogExp2(SKY_COLOR, 0.01);
   scene.add(controls.getObject());
   renderer.setClearColor(SKY_COLOR);
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -96,9 +97,9 @@ function init () {
   dirLight.position.set( -1, 1.75, 1 );
   dirLight.position.multiplyScalar( 50 );
   scene.add( dirLight );
-  dirLight.castShadow = true;
+  /*dirLight.castShadow = true;
   dirLight.shadow.mapSize.width = 2048;
-  dirLight.shadow.mapSize.height = 2048;
+  dirLight.shadow.mapSize.height = 2048;*/
   var d = 50;
   dirLight.shadow.camera.left = -d;
   dirLight.shadow.camera.right = d;
@@ -115,6 +116,9 @@ function init () {
   //const boxMaterial = new THREE.MeshBasicMaterial({color: 0xff2222, side: THREE.DoubleSide});
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
   scene.add(box);
+
+  // Terrain
+  scene.add(WORLDMANAGER.superChunkObject);
 }
 
 function setUpControls() {
@@ -183,7 +187,7 @@ function onWindowResize() {
 }
 
 const MOVESPEED = 1.4;
-const FLYSPEED = 10;
+const FLYSPEED = 200;
 const DECEL = 10;
 const tmp = new THREE.Vector3();
 function animate() {
@@ -204,7 +208,7 @@ function animate() {
       if (moveLeft) velocity.x = -FLYSPEED;
       if (moveRight) velocity.x = FLYSPEED;
       velocity.applyEuler(new THREE.Euler(pitch, 0, 0));
-      if (moveFast) velocity.multiplyScalar(10);
+      if (moveFast) velocity.multiplyScalar(3);
     } else {
       velocity.x -= velocity.x * DECEL * delta;
       velocity.z -= velocity.z * DECEL * delta;

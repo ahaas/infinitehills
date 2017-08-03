@@ -1,21 +1,56 @@
 WORLDMANAGER = {};
 
 (function() {
-const planeGeometries = [];
-for (var i=0; i<30; i++) {
-  const geo = new THREE.PlaneGeometry(HEIGHTMAP.CHUNK_SIZE, HEIGHTMAP.CHUNK_SIZE, HEIGHTMAP.CHUNK_RES-1, HEIGHTMAP.CHUNK_RES-1);
-  geo.rotateX(-Math.PI/2);
-  planeGeometries.push(geo);
-}
 
-let curChunk = [-100, -100];
+// Fix fencepost issues caused by reasoning by vertices vs length.
+// TODO: Clean this up more systematically, as it can cause skew when
+// applied to things like chunk positions.
+const MAGIC_FPO = HEIGHTMAP.SUPERCHUNK_RES / (HEIGHTMAP.SUPERCHUNK_RES - 1)
+const texture = new THREE.TextureLoader().load('textures/grass.jpg');
+texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+const textureRepeat = HEIGHTMAP.CHUNK_SIZE*MAGIC_FPO;
+texture.repeat.set(textureRepeat,  textureRepeat);
+const material = new THREE.MeshPhongMaterial({
+  color: 0x44ff44,
+  map: texture,
+});
+
+
+const superChunkGeometry = new THREE.PlaneGeometry(HEIGHTMAP.CHUNK_SIZE*3, HEIGHTMAP.CHUNK_SIZE*3, HEIGHTMAP.CHUNK_RES*3-1, HEIGHTMAP.CHUNK_RES*3-1);
+superChunkGeometry.rotateX(-Math.PI/2);
+const superChunkObject = new THREE.Mesh(superChunkGeometry, material);
+WORLDMANAGER.superChunkObject = superChunkObject;
+
+let curChunk = [NaN, NaN];
 WORLDMANAGER.update = function() {
   const newChunk = WORLDMANAGER.getCurrentChunk();
   if (curChunk[0] != newChunk[0] || curChunk[1] != newChunk[1]) {
     curChunk = newChunk;
-    WORLDMANAGER.updateLoadedChunks();
+    //WORLDMANAGER.updateLoadedChunks();
+    WORLDMANAGER.updateSuperChunkGeometry();
   }
 }
+
+
+WORLDMANAGER.updateSuperChunkGeometry = function () {
+  const SUPERCHUNK_RES = HEIGHTMAP.SUPERCHUNK_RES;
+  const heightmap = HEIGHTMAP.generateSuperChunk(curChunk[0], curChunk[1]);
+  const nVertices = superChunkGeometry.vertices.length;
+  const expectedVertices = SUPERCHUNK_RES * SUPERCHUNK_RES;
+  if (nVertices !== expectedVertices) {
+    throw 'Plane only has ' + nVertices + ' vertices, needs ' + expectedVertices;
+  }
+  for (var y=0; y < SUPERCHUNK_RES; y++) {
+    for (var x=0; x < SUPERCHUNK_RES; x++) {
+      superChunkGeometry.vertices[y*SUPERCHUNK_RES + x].y = heightmap[x][y];
+    }
+  }
+  const t0 = HEIGHTMAP.CHUNK_SIZE * MAGIC_FPO;
+  superChunkObject.position.setX(curChunk[0] * t0)
+                           .setZ(curChunk[1] * t0);
+  superChunkGeometry.computeVertexNormals();
+  superChunkGeometry.verticesNeedUpdate = true;
+};
 
 // Returns [x,y] index of current chunk.
 WORLDMANAGER.getCurrentChunk = function () {
@@ -28,10 +63,7 @@ WORLDMANAGER.getCurrentChunk = function () {
   return [cx, cy];
 }
 
-const loadedChunks = [];  // [[cx, cy], Plane]
-WORLDMANAGER.loadedChunks_ = loadedChunks;
-
-const MAX_CHUNK_DIST = 1;
+/*const MAX_CHUNK_DIST = 1;
 WORLDMANAGER.updateLoadedChunks = function () {
   // Prune chunks that are too far.
   const chunksToDelete = [];
@@ -88,7 +120,7 @@ WORLDMANAGER.createChunkAt = function(cx, cy) {
   plane.translateZ(cy * HEIGHTMAP.CHUNK_SIZE);
   loadedChunks.push([[cx, cy], plane]);
   MAIN.scene.add(plane);
-}
+}*/
 
 
 
