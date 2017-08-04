@@ -7,6 +7,7 @@ MAIN = {};
 (function() {
 
 
+let controlsEnabled = false;
 const blocker = document.getElementById( 'blocker' );
 const instructions = document.getElementById( 'instructions' );
 
@@ -65,17 +66,8 @@ const renderer = new THREE.WebGLRenderer();
 MAIN.scene = scene;
 MAIN.controls = controls;
 
-let controlsEnabled = false;
-let moveForward = false;
-let moveBackward = false;
-let moveLeft = false;
-let moveRight = false;
-let moveFast = false;
-let canJump = false;
-let flying = true;  // TODO: Change default to not flying.
 
 let prevTime = performance.now();
-let velocity = new THREE.Vector3(0,0,0);
 
 init();
 animate();
@@ -91,7 +83,7 @@ function init () {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
-  setUpControls();
+  PLAYER.setUpControls();
   window.addEventListener('resize', onWindowResize, false);
 
   // Directional light.
@@ -124,119 +116,23 @@ function init () {
   scene.add(WORLDMANAGER.superchunkObject);
 }
 
-function setUpControls() {
-  var onKeyDown = function ( event ) {
-    switch ( event.keyCode ) {
-      case 16: // shift
-        moveFast = true;
-        break;
-      case 38: // up
-      case 87: // w
-        moveForward = true;
-        break;
-      case 37: // left
-      case 65: // a
-        moveLeft = true; break;
-      case 40: // down
-      case 83: // s
-        moveBackward = true;
-        break;
-      case 39: // right
-      case 68: // d
-        moveRight = true;
-        break;
-      case 32: //space
-        if (canJump) velocity.y += 4;
-        canJump = false;
-        break;
-      case 86: // v
-        velocity.set(0,0,0);
-        flying = !flying;
-        console.log("Flying = " + flying);
-        break;
-    }
-  };
-  var onKeyUp = function ( event ) {
-    switch( event.keyCode ) {
-      case 16: // shift
-        moveFast = false;
-        break;
-      case 38: // up
-      case 87: // w
-        moveForward = false;
-        break;
-      case 37: // left
-      case 65: // a
-        moveLeft = false;
-        break;
-      case 40: // down
-      case 83: // s
-        moveBackward = false;
-        break;
-      case 39: // right
-      case 68: // d
-        moveRight = false;
-        break;
-    }
-  };
-  document.addEventListener( 'keydown', onKeyDown, false );
-  document.addEventListener( 'keyup', onKeyUp, false );
-}
-
 function onWindowResize() {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
-const MOVESPEED = 1.4;
-const FLYSPEED = 200;
-const DECEL = 10;
-const tmp = new THREE.Vector3();
 function animate() {
   requestAnimationFrame(animate);
+
+  WORLDMANAGER.update();
   if (controlsEnabled) {
     const time = performance.now();
     const delta = (time - prevTime) / 1000;
-
-    if (flying) {
-      velocity.set(0,0,0);
-      controls.getDirection(tmp)
-      let pitch = Math.asin(tmp.y);
-      if (pitch !== pitch) {
-        pitch = tmp.y === 1 ? Math.PI/2 : -Math.PI/2;
-      }
-      if (moveForward) velocity.z = -FLYSPEED;
-      if (moveBackward) velocity.z = FLYSPEED;
-      if (moveLeft) velocity.x = -FLYSPEED;
-      if (moveRight) velocity.x = FLYSPEED;
-      velocity.applyEuler(new THREE.Euler(pitch, 0, 0));
-      if (moveFast) velocity.multiplyScalar(3);
-    } else {
-      velocity.x -= velocity.x * DECEL * delta;
-      velocity.z -= velocity.z * DECEL * delta;
-      velocity.y -= 9.8 * delta;
-      const ms = moveFast ? MOVESPEED * 2 : MOVESPEED;
-      if (moveForward) velocity.z = -ms;
-      if (moveBackward) velocity.z = ms;
-      if (moveLeft) velocity.x = -ms;
-      if (moveRight) velocity.x = ms;
-    }
-    controls.getObject().translateX(velocity.x * delta)
-                        .translateY(velocity.y * delta)
-                        .translateZ(velocity.z * delta);
-
-    // Floor.
-    if (controls.getObject().position.y < 2 && !flying) {
-      velocity.y = 0;
-      controls.getObject().position.y = 2;
-      canJump = true;
-    }
-
-
     prevTime = time;
+
+    PLAYER.update(delta);
   }
-  WORLDMANAGER.update();
 
   renderer.render(scene, camera);
 }
