@@ -5,10 +5,14 @@ MAIN = {};
 
 
 (function() {
+
+
 const blocker = document.getElementById( 'blocker' );
 const instructions = document.getElementById( 'instructions' );
 
-const havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+const havePointerLock = 'pointerLockElement' in document ||
+                        'mozPointerLockElement' in document ||
+                        'webkitPointerLockElement' in document;
 
 // Check if browser supports Pointer Lock API.
 if (havePointerLock) {
@@ -80,8 +84,7 @@ function init () {
   const SKY_COLOR = 0x7EC0EE
   hemiLight.position.set(0.095, 1, 0.75);
   scene.add(hemiLight);
-  scene.fog = new THREE.Fog(SKY_COLOR, HEIGHTMAP.CHUNK_SIZE*0.8, HEIGHTMAP.CHUNK_SIZE);
-  //scene.fog = new THREE.FogExp2(SKY_COLOR, 0.01);
+  scene.fog = new THREE.Fog(SKY_COLOR, HEIGHTMAP.CHUNK_SIZE*0.6, HEIGHTMAP.CHUNK_SIZE);
   scene.add(controls.getObject());
   renderer.setClearColor(SKY_COLOR);
   renderer.setPixelRatio(window.devicePixelRatio);
@@ -118,7 +121,7 @@ function init () {
   scene.add(box);
 
   // Terrain
-  scene.add(WORLDMANAGER.superChunkObject);
+  scene.add(WORLDMANAGER.superchunkObject);
 }
 
 function setUpControls() {
@@ -222,7 +225,6 @@ function animate() {
     controls.getObject().translateX(velocity.x * delta)
                         .translateY(velocity.y * delta)
                         .translateZ(velocity.z * delta);
-    WORLDMANAGER.update();
 
     // Floor.
     if (controls.getObject().position.y < 2 && !flying) {
@@ -234,6 +236,8 @@ function animate() {
 
     prevTime = time;
   }
+  WORLDMANAGER.update();
+
   renderer.render(scene, camera);
 }
 
