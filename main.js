@@ -126,13 +126,13 @@ function animate() {
   requestAnimationFrame(animate);
 
   WORLDMANAGER.update();
-  if (controlsEnabled) {
-    const time = performance.now();
-    const delta = (time - prevTime) / 1000;
-    prevTime = time;
 
-    PLAYER.update(delta);
-  }
+  const time = performance.now();
+  const delta = Math.min((time - prevTime) / 1000, 0.1);
+  prevTime = time;
+  // Prevent falling through world when delta is large, which could be
+  // triggered by tabbing out or otherwise pausing the animation.
+  PLAYER.update(delta);
 
   renderer.render(scene, camera);
 }

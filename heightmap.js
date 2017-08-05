@@ -35,33 +35,6 @@ HEIGHTMAP.CHUNK_SIZE = CHUNK_SIZE;
 HEIGHTMAP.SUPERCHUNK_RES = SUPERCHUNK_RES;
 
 
-/**
- * Return a list of (x, y, r) hill locations within a chunk.
- * If supplied, offset parameters will be used to move the outputted
- * coordinates.
- */
-// TODO: Memoize.
-function generateHills (chunkX, chunkY, offsetX, offsetY) {
-  const out = [];
-  const random = new Random(chunkX + chunkY * 16807);
-  for (var i=0; i < HILLS_PER_CHUNK; i++) {
-    const r = random.nextFloat() * (HILL_MAX_RADIUS - HILL_MIN_RADIUS) + HILL_MIN_RADIUS;
-    let x = random.nextFloat() * CHUNK_RES;
-    let y = random.nextFloat() * CHUNK_RES;
-    if (offsetX) {
-      x += offsetX * CHUNK_RES;
-      //offsetX > 0 ? x-- : x++;
-    }
-    if (offsetY) {
-      y += offsetY * CHUNK_RES;
-      //offsetY > 0 ? y-- : y++;
-    }
-    out.push([x, y, r]);
-  }
-  return out;
-};
-
-
 /* Generate the heightmap that includes the chunk located at the
  * supplied coordinates, as well as the 8 surrounding chunks. */
 HEIGHTMAP.generateSuperchunk = function (chunkX, chunkY) {
@@ -74,27 +47,26 @@ HEIGHTMAP.generateSuperchunk = function (chunkX, chunkY) {
     }
   }
 
-  // Generate hills, including ones from neighboring chunks, since the
-  // 9 chunks in the super chunk may also include parts of hills located
-  // outside the 9 chunks. Thus, in total, 25 chunks worth of hills are
-  // required.
+  // Hill generation and heightmap manipulation were originally done in
+  // separate steps, but combining them avoids intermediate memory usage
+  // and reduces latency.
   const cx = chunkX, cy = chunkY;
-  let hills = [];  // (x, y, r) tuples
-  for (var ix=-2; ix<=2; ix++) {
-    for (var iy=-2; iy<=2; iy++) {
-      hills = hills.concat(generateHills(cx+ix, cy+iy, ix+1, iy+1));
-    }
-  }
+  for (var ix = -2; ix<=2; ix++) {
+    for (var iy = -2; iy<=2; iy++) {
+      const random = new Random((cx+ix) + (cy+iy) * 16807);
+      for (var h=0; h < HILLS_PER_CHUNK; h++) {
+        const hr = random.nextFloat() * (HILL_MAX_RADIUS - HILL_MIN_RADIUS) + HILL_MIN_RADIUS;
+        let hx = (random.nextFloat() + ix + 1) * CHUNK_RES;
+        let hy = (random.nextFloat() + iy + 1) * CHUNK_RES;
 
-  // Push up the terrain for each hill. Ignore coordinates outside the
-  // superchunk.
-  for (const hill of hills) {
-    const hx = hill[0], hy = hill[1], hr = hill[2];
-    for (var x=Math.floor(Math.max(hx-hr,0)); x < hx+hr && x < CHUNK_RES*3; x++) {
-      for (var y=Math.floor(Math.max(hy-hr,0)); y < hy+hr && y < CHUNK_RES*3; y++) {
-        const dx = x-hx;
-        const dy = y-hy;
-        heightmap[x][y] += Math.max(hr*hr - (dx*dx + dy*dy), 0);
+        // Add hill to heightmap.
+        for (var x=Math.floor(Math.max(hx-hr,0)); x < hx+hr && x < CHUNK_RES*3; x++) {
+          for (var y=Math.floor(Math.max(hy-hr,0)); y < hy+hr && y < CHUNK_RES*3; y++) {
+            const dx = x-hx;
+            const dy = y-hy;
+            heightmap[x][y] += Math.max(hr*hr - (dx*dx + dy*dy), 0);
+          }
+        }
       }
     }
   }

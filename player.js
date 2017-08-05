@@ -20,7 +20,7 @@ let moveLeft = false;
 let moveRight = false;
 let moveFast = false;
 let isOnGround = false;
-let flying = true;
+let flying = false;
 const tmp = new THREE.Vector3();
 PLAYER.update = function (delta) {
   if (!ply) {
@@ -55,6 +55,9 @@ PLAYER.update = function (delta) {
     if (moveBackward) velocity.z = ms;
     if (moveLeft) velocity.x = -ms;
     if (moveRight) velocity.x = ms;
+  }
+  if (velocity.lengthManhattan() < 0.001) {
+    velocity.set(0,0,0);
   }
   ply.translateX(velocity.x * delta)
      .translateY(velocity.y * delta)
