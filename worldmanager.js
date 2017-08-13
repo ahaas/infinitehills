@@ -18,9 +18,10 @@ let superchunkMaterial;
   const textureRepeat = HEIGHTMAP.CHUNK_SIZE*MAGIC_FPO;
   texture.repeat.set(textureRepeat,  textureRepeat);
   superchunkMaterial = new THREE.MeshPhongMaterial({
-    color: 0x88ff88,
+    color: 0xaaff88,
     map: texture,
     shininess: 5,
+    vertexColors: THREE.VertexColors 
   });
 })();
 
@@ -73,17 +74,35 @@ WORLDMANAGER.updateSuperchunkObject = function () {
       const vertex = superchunkGeometry.vertices[y*SUPERCHUNK_RES + x];
       vertex.y = heightmap[x][y];
       const seed = inthash(Math.floor(vertex.y * 10000));
-      if ((seed % 10000) < 128) {
+      if (vertex.y > MAIN.WATER_Y+1 && (seed % 10000) < 128) {
         const pos = vertex.clone();
         superchunkObject.localToWorld(pos);
         TREEMANAGER.makeTree(pos, seed % 8);
       }
     }
   }
+  /*for ( var i = 0, l = superchunkGeometry.faces.length; i < l; i ++ ) {
+    var face = superchunkGeometry.faces[i];
+
+    const dA = yToDarkness(superchunkObject.localToWorld(superchunkGeometry.vertices[face.a].clone()).y);
+    const dB = yToDarkness(superchunkObject.localToWorld(superchunkGeometry.vertices[face.b].clone()).y);
+    const dC = yToDarkness(superchunkObject.localToWorld(superchunkGeometry.vertices[face.c].clone()).y);
+    face.vertexColors[ 0 ] = new THREE.Color().setRGB(dA, dA, dA);
+    face.vertexColors[ 1 ] = new THREE.Color().setRGB(dB, dB, dB);
+    face.vertexColors[ 2 ] = new THREE.Color().setRGB(dC, dC, dC);
+  }
+  */
   superchunkGeometry.verticesNeedUpdate = true;
   superchunkGeometry.computeVertexNormals();
   MAIN.updateShadows();
+  MAIN.updateWater();
 };
+
+function yToDarkness(y) {
+  const startY = MAIN.WATER_Y + 20;
+  const endY = MAIN.WATER_Y - 20;
+  return Math.sqrt(Math.max(Math.min((y - endY) / (startY - endY), 1), 0));
+}
 
 
 // Returns [x,y] index of the chunk that the player is in.

@@ -58,7 +58,7 @@ if (havePointerLock) {
   instructions.innerHTML = 'Your browser doesn\'t seem to support Pointer Lock API';
 }
 
-const camera = new THREE.PerspectiveCamera(80, window.innerWidth/window.innerHeight, 1, 2000);
+const camera = new THREE.PerspectiveCamera(80, window.innerWidth/window.innerHeight, 1, 2000 * 1000);
 const scene = new THREE.Scene();
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.3);
 const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
@@ -67,6 +67,7 @@ const renderer = new THREE.WebGLRenderer();
 MAIN.camera = camera;
 MAIN.scene = scene;
 MAIN.controls = controls;
+MAIN.WATER_Y = -50;
 
 
 let prevTime = performance.now();
@@ -123,8 +124,7 @@ function init () {
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
   box.castShadow = true;
   scene.add(box);
-
-  /*
+      /*
       var parameters = {
         width: HEIGHTMAP.CHUNK_SIZE*1.5,
         height: HEIGHTMAP.CHUNK_SIZE*1.5,
@@ -143,7 +143,7 @@ function init () {
           alpha:   1.0,
           sunDirection: dirLight2.position.clone().normalize(),
           sunColor: 0xffffff,
-          waterColor: 0x001e0f,
+          waterColor: 0x8888aa,
           distortionScale: 50.0,
           fog: scene.fog != undefined
         } );
@@ -155,7 +155,7 @@ function init () {
         mirrorMesh.rotation.x = - Math.PI * 0.5;
         mirrorMesh.position.y -= 50;
         scene.add( mirrorMesh );
-  */
+        */
 
 
 				// skybox
@@ -203,30 +203,31 @@ function init () {
 				} );
 
 				skyBox = new THREE.Mesh(
-					new THREE.BoxGeometry( 1900, 1900, 1900 ),
+					new THREE.BoxGeometry( 1900*1000, 1900*1000, 1900*1000 ),
 					skyBoxMaterial
 				);
 
 				scene.add( skyBox );
 
-
   waterNormals = new THREE.TextureLoader().load( 'assets/textures/waternormals.jpg' );
   waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
   waterNormals.repeat.set(16, 16);
   waterMat = new THREE.MeshPhongMaterial({
-    color: 0x999999,
+    color: 0x8888aa,
     specular: 0x666666,
     normalMap: waterNormals,
-    normalScale: new THREE.Vector2(0.5, 0.5),
+    normalScale: new THREE.Vector2(0.2, 0.2),
     shininess: 100,
+    reflectivity: 0.6,
     depthWrite: false,
 		envMap: cubeMap,
   });
-  waterPlane = new THREE.PlaneGeometry(HEIGHTMAP.CHUNK_SIZE * 1.5, HEIGHTMAP.CHUNK_SIZE * 1.5);
+  waterPlane = new THREE.PlaneGeometry(HEIGHTMAP.CHUNK_SIZE * 2.5, HEIGHTMAP.CHUNK_SIZE * 2.5);
   water = new THREE.Mesh(waterPlane,  waterMat);
   water.rotation.x = -Math.PI*0.5;
-  water.position.y -= 50;
+  water.position.y = MAIN.WATER_Y;
   scene.add(water);
+  
 
   TREEMANAGER.init();
 
@@ -255,6 +256,11 @@ MAIN.updateShadows = function() {
   renderer.shadowMap.needsUpdate = true;
 }
 
+MAIN.updateWater = function() {
+  water.position.copy(WORLDMANAGER.superchunkObject.position);
+  water.position.y = MAIN.WATER_Y;
+}
+
 function animate() {
   requestAnimationFrame(animate);
 
@@ -268,9 +274,11 @@ function animate() {
   // triggered by tabbing out or otherwise pausing the animation.
   PLAYER.update(delta);
 
-  const offset  = (time/60000) % 1;
+  const offset = (time / 30000) % 1;
   water.material.normalMap.offset.set(offset, offset);
-  skyBox.position.copy(MAIN.camera.getWorldPosition());
+  //skyBox.position.copy(MAIN.camera.getWorldPosition());
+  //water.material.uniforms.time.value += 1.0 / 60.0;
+  //water.render();
 
   renderer.render(scene, camera);
 }
