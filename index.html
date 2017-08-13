@@ -42,8 +42,9 @@
   </style>
 </head>
 <body>
+  <!-- Libraries -->
   <script src="lib/three.js"></script>
-  <script src="lib/threejs/PointerLockControls.js"></script>
+  <script src="lib/PointerLockControls.js"></script>
 
   <div id="blocker">
     <div id="instructions">
@@ -53,8 +54,10 @@
     </div>
   </div>
 
+  <!-- Order is important -->
   <script src="random.js"></script>
   <script src="heightmap.js"></script>
+  <script src="treemanager.js"></script>
   <script src="worldmanager.js"></script>
   <script src="player.js"></script>
   <script src="main.js"></script>

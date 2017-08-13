@@ -60,17 +60,16 @@ if (havePointerLock) {
 
 const camera = new THREE.PerspectiveCamera(80, window.innerWidth/window.innerHeight, 1, 2000);
 const scene = new THREE.Scene();
-const hemiLight = new THREE.HemisphereLight(0xeeeeff, 0x777788, 0.3);
+const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.3);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
 const controls = new THREE.PointerLockControls(camera);
 const renderer = new THREE.WebGLRenderer();
+MAIN.camera = camera;
 MAIN.scene = scene;
 MAIN.controls = controls;
 
 
 let prevTime = performance.now();
-
-init();
-animate();
 
 function init () {
   const SKY_COLOR = 0x7EC0EE
@@ -81,36 +80,44 @@ function init () {
   renderer.setClearColor(SKY_COLOR);
   renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   document.body.appendChild(renderer.domElement);
 
   PLAYER.setUpControls();
   window.addEventListener('resize', onWindowResize, false);
 
   // Directional light.
-  dirLight = new THREE.DirectionalLight( 0xffffff, 1.5 );
-  dirLight.color.setHSL( 0.1, 1, 0.5 );
   dirLight.position.set( -1, 1.75, 1 );
   dirLight.position.multiplyScalar( 50 );
   scene.add( dirLight );
-  /*dirLight.castShadow = true;
-  dirLight.shadow.mapSize.width = 2048;
-  dirLight.shadow.mapSize.height = 2048;*/
-  var d = 50;
+  dirLight.castShadow = true;
+  dirLight.shadow.mapSize.width = dirLight.shadow.mapSize.height = 512;
+  dirLight.shadow.camera.fov = 120;
+  dirLight.shadow.camera.near = 0.1;
+  dirLight.shadow.camera.far = 3000;
+  var d = HEIGHTMAP.CHUNK_SIZE * 1.4;
   dirLight.shadow.camera.left = -d;
   dirLight.shadow.camera.right = d;
   dirLight.shadow.camera.top = d;
   dirLight.shadow.camera.bottom = -d;
   dirLight.shadow.camera.far = 3500;
-  dirLight.shadow.bias = -0.0001;
+  dirLight.shadow.bias = 0.0001;
+  MAIN.scene.add(dirLight.target);
+
+  const ambientLight = new THREE.AmbientLight(0x404040);
+  MAIN.scene.add(ambientLight);
 
   // Box.
   const boxMaterial = new THREE.MeshPhongMaterial({
     color: 0xffffff,
   });
   const boxGeometry = new THREE.BoxGeometry(1, 2, 1);
-  //const boxMaterial = new THREE.MeshBasicMaterial({color: 0xff2222, side: THREE.DoubleSide});
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
+  box.castShadow = true;
   scene.add(box);
+
+  TREEMANAGER.init();
 
   // Terrain
   scene.add(WORLDMANAGER.superchunkObject);
@@ -122,10 +129,26 @@ function onWindowResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 }
 
+var helper = new THREE.DirectionalLightHelper(dirLight, 5);
+MAIN.updateShadows = function() {
+  const basePos = WORLDMANAGER.superchunkObject.position;
+  dirLight.position.copy(basePos);
+  dirLight.position.y = 100;
+  //dirLight.position.x -= 60;
+  //dirLight.position.z += 60;
+  dirLight.target.position.copy(basePos);
+  dirLight.target.position.y = 0;
+  //dirLight.target.position.x += 60;
+  //dirLight.target.position.z -= 60;
+  renderer.shadowMap.autoUpdate = false;
+  renderer.shadowMap.needsUpdate = true;
+}
+
 function animate() {
   requestAnimationFrame(animate);
 
   WORLDMANAGER.update();
+  TREEMANAGER.update();
 
   const time = performance.now();
   const delta = Math.min((time - prevTime) / 1000, 0.1);
@@ -138,6 +161,9 @@ function animate() {
 }
 
 
+
+init();
+animate();
 
 
 })();

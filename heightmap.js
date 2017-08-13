@@ -26,7 +26,7 @@ const HILL_MIN_RADIUS = 4;
 const HILL_MAX_RADIUS = 11;
 const HILLS_PER_CHUNK = 300;
 
-const HEIGHTMAP_OFFSET = -85;
+const HEIGHTMAP_OFFSET = -81;
 const HEIGHTMAP_FACTOR = 0.06;
 
 // These parameters are also needed to create the THREEJS geometries.

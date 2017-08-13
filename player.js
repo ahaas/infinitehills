@@ -11,7 +11,7 @@ const velocity = new THREE.Vector3(0,0,0);
 PLAYER.HEIGHT = 2;  // Height, in meters.
 
 const MOVESPEED = 4;
-const FLYSPEED = 200;
+const FLYSPEED = 50;
 const DECEL = 10;
 
 let moveForward = false;

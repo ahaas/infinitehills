@@ -13,12 +13,12 @@ const MAGIC_FPO = HEIGHTMAP.SUPERCHUNK_RES
 
 let superchunkMaterial;
 (function () {
-  const texture = new THREE.TextureLoader().load('textures/grass.jpg');
+  const texture = new THREE.TextureLoader().load('assets/textures/grass.jpg');
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   const textureRepeat = HEIGHTMAP.CHUNK_SIZE*MAGIC_FPO;
   texture.repeat.set(textureRepeat,  textureRepeat);
   superchunkMaterial = new THREE.MeshPhongMaterial({
-    color: 0x33ff33,
+    color: 0x88ff88,
     map: texture,
     shininess: 5,
   });
@@ -37,6 +37,7 @@ superchunkGeometry.rotateX(-Math.PI/2);
 const superchunkObject = new THREE.Mesh(superchunkGeometry, superchunkMaterial);
 WORLDMANAGER.superchunkObject = superchunkObject;
 
+superchunkObject.receiveShadow = true;
 
 // The chunk the player is currently located in.
 let curChunk = [NaN, NaN];
@@ -61,18 +62,27 @@ WORLDMANAGER.updateSuperchunkObject = function () {
   if (nVertices !== expectedVertices) {
     throw 'Plane only has ' + nVertices + ' vertices, needs ' + expectedVertices;
   }
+  // Update mesh position.
+  superchunkObject.position.setX(curChunk[0] * HEIGHTMAP.CHUNK_SIZE)
+                           .setZ(curChunk[1] * HEIGHTMAP.CHUNK_SIZE);
+  TREEMANAGER.clear();
+  superchunkObject.updateMatrixWorld();
   const heightmap = HEIGHTMAP.generateSuperchunk(curChunk[0], curChunk[1]);
   for (var y=0; y < SUPERCHUNK_RES; y++) {
     for (var x=0; x < SUPERCHUNK_RES; x++) {
-      superchunkGeometry.vertices[y*SUPERCHUNK_RES + x].y = heightmap[x][y];
+      const vertex = superchunkGeometry.vertices[y*SUPERCHUNK_RES + x];
+      vertex.y = heightmap[x][y];
+      const seed = inthash(Math.floor(vertex.y * 10000));
+      if ((seed % 10000) < 128) {
+        const pos = vertex.clone();
+        superchunkObject.localToWorld(pos);
+        TREEMANAGER.makeTree(pos, seed % 8);
+      }
     }
   }
   superchunkGeometry.verticesNeedUpdate = true;
   superchunkGeometry.computeVertexNormals();
-
-  // Update mesh position.
-  superchunkObject.position.setX(curChunk[0] * HEIGHTMAP.CHUNK_SIZE)
-                           .setZ(curChunk[1] * HEIGHTMAP.CHUNK_SIZE);
+  MAIN.updateShadows();
 };
 
 
