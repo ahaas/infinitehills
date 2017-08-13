@@ -61,7 +61,7 @@ if (havePointerLock) {
 const camera = new THREE.PerspectiveCamera(80, window.innerWidth/window.innerHeight, 1, 2000);
 const scene = new THREE.Scene();
 const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 0.3);
-const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+const dirLight = new THREE.DirectionalLight(0xffffff, 0.4);
 const controls = new THREE.PointerLockControls(camera);
 const renderer = new THREE.WebGLRenderer();
 MAIN.camera = camera;
@@ -71,10 +71,13 @@ MAIN.controls = controls;
 
 let prevTime = performance.now();
 
+let water;
+let skyBox;
+
 function init () {
-  const SKY_COLOR = 0x7EC0EE
+  const SKY_COLOR = 0xD9CAB2; // based on skybox
   hemiLight.position.set(0.095, 1, 0.75);
-  scene.add(hemiLight);
+  //scene.add(hemiLight);
   scene.fog = new THREE.Fog(SKY_COLOR, HEIGHTMAP.CHUNK_SIZE*0.6, HEIGHTMAP.CHUNK_SIZE);
   scene.add(controls.getObject());
   renderer.setClearColor(SKY_COLOR);
@@ -105,8 +108,12 @@ function init () {
   dirLight.shadow.bias = 0.0001;
   MAIN.scene.add(dirLight.target);
 
-  const ambientLight = new THREE.AmbientLight(0x404040);
-  MAIN.scene.add(ambientLight);
+  dirLight2 = new THREE.DirectionalLight(0xffffff, 1);
+  dirLight2.position.set(-1, 1.75, 1);
+  scene.add(dirLight2);
+
+  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+  //MAIN.scene.add(ambientLight);
 
   // Box.
   const boxMaterial = new THREE.MeshPhongMaterial({
@@ -116,6 +123,110 @@ function init () {
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
   box.castShadow = true;
   scene.add(box);
+
+  /*
+      var parameters = {
+        width: HEIGHTMAP.CHUNK_SIZE*1.5,
+        height: HEIGHTMAP.CHUNK_SIZE*1.5,
+        widthSegments: 250,
+        heightSegments: 250,
+        depth: 1500,
+        param: 4,
+        filterparam: 1
+      };
+        waterNormals = new THREE.TextureLoader().load( 'assets/textures/waternormals.jpg' );
+        waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
+        water = new THREE.Water( renderer, camera, scene, {
+          textureWidth: 2048,
+          textureHeight: 2048,
+          waterNormals: waterNormals,
+          alpha:   1.0,
+          sunDirection: dirLight2.position.clone().normalize(),
+          sunColor: 0xffffff,
+          waterColor: 0x001e0f,
+          distortionScale: 50.0,
+          fog: scene.fog != undefined
+        } );
+        var mirrorMesh = new THREE.Mesh(
+          new THREE.PlaneBufferGeometry( parameters.width * 500, parameters.height * 500 ),
+          water.material
+        );
+        mirrorMesh.add( water );
+        mirrorMesh.rotation.x = - Math.PI * 0.5;
+        mirrorMesh.position.y -= 50;
+        scene.add( mirrorMesh );
+  */
+
+
+				// skybox
+
+				var cubeMap = new THREE.CubeTexture( [] );
+				cubeMap.format = THREE.RGBFormat;
+
+				var loader = new THREE.ImageLoader();
+				loader.load( 'assets/textures/skyboxsun25degtest.png', function ( image ) {
+
+					var getSide = function ( x, y ) {
+
+						var size = 1024;
+
+						var canvas = document.createElement( 'canvas' );
+						canvas.width = size;
+						canvas.height = size;
+
+						var context = canvas.getContext( '2d' );
+						context.drawImage( image, - x * size, - y * size );
+
+						return canvas;
+
+					};
+
+					cubeMap.images[ 0 ] = getSide( 2, 1 ); // px
+					cubeMap.images[ 1 ] = getSide( 0, 1 ); // nx
+					cubeMap.images[ 2 ] = getSide( 1, 0 ); // py
+					cubeMap.images[ 3 ] = getSide( 1, 2 ); // ny
+					cubeMap.images[ 4 ] = getSide( 1, 1 ); // pz
+					cubeMap.images[ 5 ] = getSide( 3, 1 ); // nz
+					cubeMap.needsUpdate = true;
+
+				} );
+				var cubeShader = THREE.ShaderLib[ 'cube' ];
+				cubeShader.uniforms[ 'tCube' ].value = cubeMap;
+
+				var skyBoxMaterial = new THREE.ShaderMaterial( {
+					fragmentShader: cubeShader.fragmentShader,
+					vertexShader: cubeShader.vertexShader,
+					uniforms: cubeShader.uniforms,
+					//depthWrite: false,
+					side: THREE.BackSide,
+					fog: false
+				} );
+
+				skyBox = new THREE.Mesh(
+					new THREE.BoxGeometry( 1900, 1900, 1900 ),
+					skyBoxMaterial
+				);
+
+				scene.add( skyBox );
+
+
+  waterNormals = new THREE.TextureLoader().load( 'assets/textures/waternormals.jpg' );
+  waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
+  waterNormals.repeat.set(16, 16);
+  waterMat = new THREE.MeshPhongMaterial({
+    color: 0x999999,
+    specular: 0x666666,
+    normalMap: waterNormals,
+    normalScale: new THREE.Vector2(0.5, 0.5),
+    shininess: 100,
+    depthWrite: false,
+		envMap: cubeMap,
+  });
+  waterPlane = new THREE.PlaneGeometry(HEIGHTMAP.CHUNK_SIZE * 1.5, HEIGHTMAP.CHUNK_SIZE * 1.5);
+  water = new THREE.Mesh(waterPlane,  waterMat);
+  water.rotation.x = -Math.PI*0.5;
+  water.position.y -= 50;
+  scene.add(water);
 
   TREEMANAGER.init();
 
@@ -156,6 +267,10 @@ function animate() {
   // Prevent falling through world when delta is large, which could be
   // triggered by tabbing out or otherwise pausing the animation.
   PLAYER.update(delta);
+
+  const offset  = (time/60000) % 1;
+  water.material.normalMap.offset.set(offset, offset);
+  skyBox.position.copy(MAIN.camera.getWorldPosition());
 
   renderer.render(scene, camera);
 }
