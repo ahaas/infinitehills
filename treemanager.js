@@ -19,7 +19,6 @@ const cys = [];
 const treeMats = [];
 
 TREEMANAGER.init = function () {
-  //TREEMANAGER.makeTree(new THREE.Vector3(0,0,0));
   const textureLoader = new THREE.TextureLoader();
   for (var i=1; i <= 8; i++) {
     const texture = textureLoader.load('assets/sprites/tree' + i + '.png');
@@ -33,9 +32,7 @@ TREEMANAGER.init = function () {
   }
 };
 
-//const texture = new THREE.TextureLoader().load('assets/sprites/tree2.png');
 const geometry = new THREE.PlaneGeometry(HEIGHT, HEIGHT);
-let ii = 1;
 TREEMANAGER.makeTree = function(pos, matNo) {
   let plane;
   if (treePool.length > 0) {
@@ -49,6 +46,7 @@ TREEMANAGER.makeTree = function(pos, matNo) {
   MAIN.scene.add(plane);
   trees.push(plane);
 
+  // Add cylinder to cast shadow.
   let cy;
   if (cyPool.length > 0) {
     cy = cyPool.pop();

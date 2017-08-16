@@ -81,17 +81,6 @@ WORLDMANAGER.updateSuperchunkObject = function () {
       }
     }
   }
-  /*for ( var i = 0, l = superchunkGeometry.faces.length; i < l; i ++ ) {
-    var face = superchunkGeometry.faces[i];
-
-    const dA = yToDarkness(superchunkObject.localToWorld(superchunkGeometry.vertices[face.a].clone()).y);
-    const dB = yToDarkness(superchunkObject.localToWorld(superchunkGeometry.vertices[face.b].clone()).y);
-    const dC = yToDarkness(superchunkObject.localToWorld(superchunkGeometry.vertices[face.c].clone()).y);
-    face.vertexColors[ 0 ] = new THREE.Color().setRGB(dA, dA, dA);
-    face.vertexColors[ 1 ] = new THREE.Color().setRGB(dB, dB, dB);
-    face.vertexColors[ 2 ] = new THREE.Color().setRGB(dC, dC, dC);
-  }
-  */
   superchunkGeometry.verticesNeedUpdate = true;
   superchunkGeometry.computeVertexNormals();
   MAIN.updateShadows();

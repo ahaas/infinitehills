@@ -77,8 +77,6 @@ let skyBox;
 
 function init () {
   const SKY_COLOR = 0xD9CAB2; // based on skybox
-  hemiLight.position.set(0.095, 1, 0.75);
-  //scene.add(hemiLight);
   scene.fog = new THREE.Fog(SKY_COLOR, HEIGHTMAP.CHUNK_SIZE*0.6, HEIGHTMAP.CHUNK_SIZE);
   scene.add(controls.getObject());
   renderer.setClearColor(SKY_COLOR);
@@ -92,7 +90,7 @@ function init () {
   window.addEventListener('resize', onWindowResize, false);
 
   // Directional light.
-  dirLight.position.set( -1, 1.75, 1 );
+  dirLight.position.set( -1, 1.75, -1 );
   dirLight.position.multiplyScalar( 50 );
   scene.add( dirLight );
   dirLight.castShadow = true;
@@ -114,7 +112,7 @@ function init () {
   scene.add(dirLight2);
 
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  //MAIN.scene.add(ambientLight);
+  // MAIN.scene.add(ambientLight);
 
   // Box.
   const boxMaterial = new THREE.MeshPhongMaterial({
@@ -124,90 +122,58 @@ function init () {
   const box = new THREE.Mesh(boxGeometry, boxMaterial);
   box.castShadow = true;
   scene.add(box);
-      /*
-      var parameters = {
-        width: HEIGHTMAP.CHUNK_SIZE*1.5,
-        height: HEIGHTMAP.CHUNK_SIZE*1.5,
-        widthSegments: 250,
-        heightSegments: 250,
-        depth: 1500,
-        param: 4,
-        filterparam: 1
-      };
-        waterNormals = new THREE.TextureLoader().load( 'assets/textures/waternormals.jpg' );
-        waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
-        water = new THREE.Water( renderer, camera, scene, {
-          textureWidth: 2048,
-          textureHeight: 2048,
-          waterNormals: waterNormals,
-          alpha:   1.0,
-          sunDirection: dirLight2.position.clone().normalize(),
-          sunColor: 0xffffff,
-          waterColor: 0x8888aa,
-          distortionScale: 50.0,
-          fog: scene.fog != undefined
-        } );
-        var mirrorMesh = new THREE.Mesh(
-          new THREE.PlaneBufferGeometry( parameters.width * 500, parameters.height * 500 ),
-          water.material
-        );
-        mirrorMesh.add( water );
-        mirrorMesh.rotation.x = - Math.PI * 0.5;
-        mirrorMesh.position.y -= 50;
-        scene.add( mirrorMesh );
-        */
 
 
-				// skybox
+  // skybox
 
-				var cubeMap = new THREE.CubeTexture( [] );
-				cubeMap.format = THREE.RGBFormat;
+  var cubeMap = new THREE.CubeTexture( [] );
+  cubeMap.format = THREE.RGBFormat;
 
-				var loader = new THREE.ImageLoader();
-				loader.load( 'assets/textures/skyboxsun25degtest.png', function ( image ) {
+  var loader = new THREE.ImageLoader();
+  loader.load( 'assets/textures/skyboxsun25degtest.png', function ( image ) {
 
-					var getSide = function ( x, y ) {
+    var getSide = function ( x, y ) {
 
-						var size = 1024;
+      var size = 1024;
 
-						var canvas = document.createElement( 'canvas' );
-						canvas.width = size;
-						canvas.height = size;
+      var canvas = document.createElement( 'canvas' );
+      canvas.width = size;
+      canvas.height = size;
 
-						var context = canvas.getContext( '2d' );
-						context.drawImage( image, - x * size, - y * size );
+      var context = canvas.getContext( '2d' );
+      context.drawImage( image, - x * size, - y * size );
 
-						return canvas;
+      return canvas;
 
-					};
+    };
 
-					cubeMap.images[ 0 ] = getSide( 2, 1 ); // px
-					cubeMap.images[ 1 ] = getSide( 0, 1 ); // nx
-					cubeMap.images[ 2 ] = getSide( 1, 0 ); // py
-					cubeMap.images[ 3 ] = getSide( 1, 2 ); // ny
-					cubeMap.images[ 4 ] = getSide( 1, 1 ); // pz
-					cubeMap.images[ 5 ] = getSide( 3, 1 ); // nz
-					cubeMap.needsUpdate = true;
+    cubeMap.images[ 0 ] = getSide( 2, 1 ); // px
+    cubeMap.images[ 1 ] = getSide( 0, 1 ); // nx
+    cubeMap.images[ 2 ] = getSide( 1, 0 ); // py
+    cubeMap.images[ 3 ] = getSide( 1, 2 ); // ny
+    cubeMap.images[ 4 ] = getSide( 1, 1 ); // pz
+    cubeMap.images[ 5 ] = getSide( 3, 1 ); // nz
+    cubeMap.needsUpdate = true;
 
-				} );
-				var cubeShader = THREE.ShaderLib[ 'cube' ];
-				cubeShader.uniforms[ 'tCube' ].value = cubeMap;
+  } );
+  var cubeShader = THREE.ShaderLib[ 'cube' ];
+  cubeShader.uniforms[ 'tCube' ].value = cubeMap;
 
-				var skyBoxMaterial = new THREE.ShaderMaterial( {
-					fragmentShader: cubeShader.fragmentShader,
-					vertexShader: cubeShader.vertexShader,
-					uniforms: cubeShader.uniforms,
-					//depthWrite: false,
-					side: THREE.BackSide,
-					fog: false
-				} );
+  var skyBoxMaterial = new THREE.ShaderMaterial( {
+    fragmentShader: cubeShader.fragmentShader,
+    vertexShader: cubeShader.vertexShader,
+    uniforms: cubeShader.uniforms,
+    //depthWrite: false,
+    side: THREE.BackSide,
+    fog: false
+  } );
 
-				skyBox = new THREE.Mesh(
-					new THREE.BoxGeometry( 1900*1000, 1900*1000, 1900*1000 ),
-					skyBoxMaterial
-				);
+  skyBox = new THREE.Mesh(
+    new THREE.BoxGeometry( 1900*1000, 1900*1000, 1900*1000 ),
+    skyBoxMaterial
+  );
 
-				scene.add( skyBox );
+  scene.add( skyBox );
 
   waterNormals = new THREE.TextureLoader().load( 'assets/textures/waternormals.jpg' );
   waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping;
@@ -220,7 +186,7 @@ function init () {
     shininess: 100,
     reflectivity: 0.6,
     depthWrite: false,
-		envMap: cubeMap,
+    envMap: cubeMap,
   });
   waterPlane = new THREE.PlaneGeometry(HEIGHTMAP.CHUNK_SIZE * 2.5, HEIGHTMAP.CHUNK_SIZE * 2.5);
   water = new THREE.Mesh(waterPlane,  waterMat);
@@ -246,12 +212,8 @@ MAIN.updateShadows = function() {
   const basePos = WORLDMANAGER.superchunkObject.position;
   dirLight.position.copy(basePos);
   dirLight.position.y = 100;
-  //dirLight.position.x -= 60;
-  //dirLight.position.z += 60;
   dirLight.target.position.copy(basePos);
   dirLight.target.position.y = 0;
-  //dirLight.target.position.x += 60;
-  //dirLight.target.position.z -= 60;
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.needsUpdate = true;
 }
@@ -268,17 +230,16 @@ function animate() {
   TREEMANAGER.update();
 
   const time = performance.now();
-  const delta = Math.min((time - prevTime) / 1000, 0.1);
-  prevTime = time;
+
   // Prevent falling through world when delta is large, which could be
   // triggered by tabbing out or otherwise pausing the animation.
+  const delta = Math.min((time - prevTime) / 1000, 0.1);
+  prevTime = time;
+
   PLAYER.update(delta);
 
   const offset = (time / 30000) % 1;
   water.material.normalMap.offset.set(offset, offset);
-  //skyBox.position.copy(MAIN.camera.getWorldPosition());
-  //water.material.uniforms.time.value += 1.0 / 60.0;
-  //water.render();
 
   renderer.render(scene, camera);
 }
