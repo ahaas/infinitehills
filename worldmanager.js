@@ -44,6 +44,7 @@ superchunkObject.receiveShadow = true;
 let curChunk = [NaN, NaN];
 
 
+// Update the world if the player moves into a new chunk.
 WORLDMANAGER.update = function() {
   const newChunk = WORLDMANAGER.getCurrentChunk();
   if (curChunk[0] != newChunk[0] || curChunk[1] != newChunk[1]) {
@@ -56,23 +57,29 @@ WORLDMANAGER.update = function() {
 // Update the superchunkObject and its geometry based on the player's
 // position.
 WORLDMANAGER.updateSuperchunkObject = function () {
-  // Update vertices.
   const SUPERCHUNK_RES = HEIGHTMAP.SUPERCHUNK_RES;
   const nVertices = superchunkGeometry.vertices.length;
   const expectedVertices = SUPERCHUNK_RES * SUPERCHUNK_RES;
   if (nVertices !== expectedVertices) {
     throw 'Plane only has ' + nVertices + ' vertices, needs ' + expectedVertices;
   }
+
   // Update mesh position.
   superchunkObject.position.setX(curChunk[0] * HEIGHTMAP.CHUNK_SIZE)
                            .setZ(curChunk[1] * HEIGHTMAP.CHUNK_SIZE);
   TREEMANAGER.clear();
   superchunkObject.updateMatrixWorld();
+
+  // Generate heightmap.
   const heightmap = HEIGHTMAP.generateSuperchunk(curChunk[0], curChunk[1]);
+
+  // Update superchunk mesh vertices.
   for (var y=0; y < SUPERCHUNK_RES; y++) {
     for (var x=0; x < SUPERCHUNK_RES; x++) {
       const vertex = superchunkGeometry.vertices[y*SUPERCHUNK_RES + x];
       vertex.y = heightmap[x][y];
+
+      // Deterministically add trees to each vertex with some probability.
       const seed = inthash(Math.floor(vertex.y * 10000));
       if (vertex.y > MAIN.WATER_Y+1 && (seed % 10000) < 128) {
         const pos = vertex.clone();
@@ -86,13 +93,6 @@ WORLDMANAGER.updateSuperchunkObject = function () {
   MAIN.updateShadows();
   MAIN.updateWater();
 };
-
-function yToDarkness(y) {
-  const startY = MAIN.WATER_Y + 20;
-  const endY = MAIN.WATER_Y - 20;
-  return Math.sqrt(Math.max(Math.min((y - endY) / (startY - endY), 1), 0));
-}
-
 
 // Returns [x,y] index of the chunk that the player is in.
 WORLDMANAGER.getCurrentChunk = function () {

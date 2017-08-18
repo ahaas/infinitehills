@@ -111,9 +111,6 @@ function init () {
   dirLight2.position.set(-1, 1.75, 1);
   scene.add(dirLight2);
 
-  const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-  // MAIN.scene.add(ambientLight);
-
   // Box.
   const boxMaterial = new THREE.MeshPhongMaterial({
     color: 0xffffff,
@@ -124,8 +121,7 @@ function init () {
   scene.add(box);
 
 
-  // skybox
-
+  // Skybox
   var cubeMap = new THREE.CubeTexture( [] );
   cubeMap.format = THREE.RGBFormat;
 

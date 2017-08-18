@@ -51,10 +51,14 @@ HEIGHTMAP.generateSuperchunk = function (chunkX, chunkY) {
   // separate steps, but combining them avoids intermediate memory usage
   // and reduces latency.
   const cx = chunkX, cy = chunkY;
+
+  // Generate hills in each chunk within the 3x3 superchunk.
   for (var ix = -2; ix<=2; ix++) {
     for (var iy = -2; iy<=2; iy++) {
+      // Seed the PRNG for this chunk.
       const random = new Random((cx+ix) + (cy+iy) * 16807);
       for (var h=0; h < HILLS_PER_CHUNK; h++) {
+        // Generate height and location for a hill.
         const hr = random.nextFloat() * (HILL_MAX_RADIUS - HILL_MIN_RADIUS) + HILL_MIN_RADIUS;
         let hx = (random.nextFloat() + ix + 1) * CHUNK_RES;
         let hy = (random.nextFloat() + iy + 1) * CHUNK_RES;
